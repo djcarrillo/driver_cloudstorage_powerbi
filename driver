@@ -1,0 +1,41 @@
+import os
+import logging
+
+import pandas as pd
+from google.cloud import storage
+
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= os.getenv('service_account')
+path_base = os.path.dirname(os.path.realpath(__file__))
+path_local_data = f'{path_base}/tmp'
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+name_bucket = os.getenv('name_bucket', 'project_bigdata_sabana')
+
+
+
+
+def download_blob(bucket_name, source_blob_name, destination_file_name) -> str:
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(source_blob_name)
+    blob.download_to_filename(destination_file_name)
+
+    content = f" [DOWNLOAD] DOWNLOADED STORAGE OBJECT  {source_blob_name} FROM BUCKET {bucket_name} TO LOCAL FILE: {destination_file_name}."
+    return content
+
+
+
+def main():
+
+    if not os.path.exists(f'{path_local_data}/results'):
+        print("[INFO] Image path not found. Creating a new folder.")
+        os.makedirs(f'{path_local_data}/results')
+
+    logging.info(download_blob(bucket_name=name_bucket, source_blob_name='result.csv',
+                 destination_file_name=f'{path_local_data}/results/result.csv'))
+    df = pd.read_csv(f'{path_local_data}/results/result.csv', sep=';', encoding='utf-8')
+    df
+
+if __name__ == '__main__':
+    main()
